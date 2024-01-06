@@ -23,5 +23,7 @@ public:
 	static void ReadData4FromFile(HANDLE&, datastruct4*);
 
 	static void ReadData4FromFile(HANDLE&);
+
+	static void ParseData4File(std::vector<unsigned char>*, datastruct4*);
 };
 

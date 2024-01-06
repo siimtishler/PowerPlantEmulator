@@ -178,7 +178,7 @@ void PlantEmulator::LaunchConsumerThread(thread &t1) {
 void PlantEmulator::ConsumerThreadFun(ControlData *cData)
 {   
     HANDLE hFile;
-    hFile = CreateFileA("Data44.bin", GENERIC_READ | GENERIC_WRITE, 0,
+    hFile = CreateFileA("C:\\Users\\S11M\\Desktop\\Data44.bin", GENERIC_READ | GENERIC_WRITE, 0,
         NULL, CREATE_ALWAYS, 0, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         cout << "Some error " << GetLastError() << endl;
@@ -194,7 +194,7 @@ void PlantEmulator::ConsumerThreadFun(ControlData *cData)
 
         // Check if there is data in pBuf
         if (!cData->pBuf->empty()) {
-            //DataManipulation::ParseData4(cData->pBuf, &this->Data4);
+            DataManipulation::ParseData4(cData->pBuf, &this->Data4);
             DataManipulation::WriteData4ToFile(hFile, cData->pBuf);
             //DataManipulation::ReadData4FromFile(hFile);
 

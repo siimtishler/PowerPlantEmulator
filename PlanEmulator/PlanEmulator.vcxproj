@@ -140,7 +140,7 @@
     <ClInclude Include="common.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Data44.bin" />
+    <None Include="..\..\..\..\Desktop\Data44.bin" />
     <None Include="Data55.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

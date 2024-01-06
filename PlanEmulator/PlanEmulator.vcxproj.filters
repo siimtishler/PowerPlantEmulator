@@ -46,7 +46,7 @@
     <None Include="Data55.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="Data44.bin">
+    <None Include="..\..\..\..\Desktop\Data44.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
