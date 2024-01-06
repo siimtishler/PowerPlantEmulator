@@ -9,11 +9,14 @@
 
 using namespace std;
 
-PlantEmulator::PlantEmulator(ControlData& cD) : cDataCat(cD) {
+PlantEmulator::PlantEmulator(ControlData& cD, const char* fpath) : cDataCat(cD) {
     if (cDataCat.pBuf == nullptr) {
         cout << "Allocating plant buffer";
         cDataCat.pBuf = new vector<unsigned char>;
     }
+    this->filepath = fpath;
+    LOG(this->filepath);
+    this->loadData4();
 }
 
 PlantEmulator::~PlantEmulator() {
@@ -139,35 +142,40 @@ const datastruct4& PlantEmulator::getData() const
 //    //dataList.push_back({ value, chrono::system_clock::now() });
 //}
 //
-//void PlantEmulator::printData4()
-//{   
-//    DataManipulation::fprintData4(this->Data4);
-//    return;
-//
-//    //for (const auto& channelEntry : Data4) {
-//    //    cout << "Ch:" << channelEntry.first << endl;
-//    //    for (const auto& pointEntry : *channelEntry.second) {
-//    //        for (const auto& dataEntry : *pointEntry.second) {
-//    //            // Print the value based on its type
-//    //            if (dataEntry.first.index() == 0) {
-//    //                cout << pointEntry.first << " = " << get<int>(dataEntry.first) << "\t";
-//    //            }
-//    //            else if (dataEntry.first.index() == 1) {
-//    //                cout << pointEntry.first << " = " << get<double>(dataEntry.first) << "\t";
-//    //            }
-//    //            else {
-//    //                cout << endl;
-//    //            }
-//    //            // Print the timestamp
-//    //            time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
-//    //            struct tm now_tm;
-//    //            localtime_s(&now_tm, &now_t);
-//    //            cout << put_time(&now_tm, "%d-%m-%Y %H:%M:%S ") << endl;
-//    //        }
-//    //    }
-//    //    cout << endl;
-//    //}
-//}
+void PlantEmulator::printData4()
+{   
+    DataManipulation::PrintData4(Data4);
+    return;
+
+    //for (const auto& channelEntry : Data4) {
+    //    cout << "Ch:" << channelEntry.first << endl;
+    //    for (const auto& pointEntry : *channelEntry.second) {
+    //        for (const auto& dataEntry : *pointEntry.second) {
+    //            // Print the value based on its type
+    //            if (dataEntry.first.index() == 0) {
+    //                cout << pointEntry.first << " = " << get<int>(dataEntry.first) << "\t";
+    //            }
+    //            else if (dataEntry.first.index() == 1) {
+    //                cout << pointEntry.first << " = " << get<double>(dataEntry.first) << "\t";
+    //            }
+    //            else {
+    //                cout << endl;
+    //            }
+    //            // Print the timestamp
+    //            time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+    //            struct tm now_tm;
+    //            localtime_s(&now_tm, &now_t);
+    //            cout << put_time(&now_tm, "%d-%m-%Y %H:%M:%S ") << endl;
+    //        }
+    //    }
+    //    cout << endl;
+    //}
+}
+
+void PlantEmulator::loadData4()
+{
+    DataManipulation::ReadData4FromFile(this->filepath, &this->Data4);
+}
 
 
 void PlantEmulator::LaunchConsumerThread(thread &t1) {
@@ -178,8 +186,8 @@ void PlantEmulator::LaunchConsumerThread(thread &t1) {
 void PlantEmulator::ConsumerThreadFun(ControlData *cData)
 {   
     HANDLE hFile;
-    hFile = CreateFileA("C:\\Users\\S11M\\Desktop\\Data44.bin", GENERIC_READ | GENERIC_WRITE, 0,
-        NULL, CREATE_ALWAYS, 0, NULL);
+    hFile = CreateFileA(this->filepath, GENERIC_READ | GENERIC_WRITE, 0,
+        NULL, OPEN_ALWAYS, 0, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         cout << "Some error " << GetLastError() << endl;
     }
@@ -196,7 +204,6 @@ void PlantEmulator::ConsumerThreadFun(ControlData *cData)
         if (!cData->pBuf->empty()) {
             DataManipulation::ParseData4(cData->pBuf, &this->Data4);
             DataManipulation::WriteData4ToFile(hFile, cData->pBuf);
-            //DataManipulation::ReadData4FromFile(hFile);
 
 
            // vector<unsigned char>& receivedData = *(cData->pBuf);

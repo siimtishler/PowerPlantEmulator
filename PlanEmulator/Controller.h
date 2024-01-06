@@ -13,7 +13,6 @@ private:
 
 	std::future<void> fut;
 
-
 	static constexpr unsigned int hash(const char* s, int off = 0) {
 		return !s[off] ? 5381 : (hash(s, off + 1) * 33) ^ s[off];
 	}
@@ -33,13 +32,12 @@ private:
 	void Exit();
 
 public:
-	Controller(ControlData&);
+	Controller(ControlData&, const char*);
 	~Controller();
 
 	void deletecData();
 	void initcData();
 	void controllerThreadFun();
-
 
 	friend class DataManipulation;
 };

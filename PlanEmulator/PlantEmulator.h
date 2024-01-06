@@ -6,22 +6,21 @@
 
 class PlantEmulator
 {
-public:
-	/*typedef std::map<std::string, std::map<std::string, std::list<std::pair<std::variant<int, double>, std::chrono::system_clock::time_point> >* >* > datastruct4;*/
-
 private:
 
 	ControlData& cDataCat;
+
 	HMODULE hDLL = nullptr;
+
+	datastruct4 Data4;
+
 	bool DLLAttached = false;
 
-	/*std::map<std::string, std::map<std::string, std::list<std::pair<std::variant<int, double>, std::chrono::system_clock::time_point> >* >* > Data4;*/
-	 datastruct4 Data4;
+	const char* filepath;
 
 public:
-	
 
-	PlantEmulator(ControlData&);
+	PlantEmulator(ControlData&, const char*);
 	~PlantEmulator();
 
 	void LoadDLL();
@@ -29,16 +28,14 @@ public:
 	void RunPlant();
 	void LaunchConsumerThread(std::thread &);
 	void ConsumerThreadFun(ControlData *); // Consumer thread function
-
 	void DisconnectDLL();
 
 	bool isDLLAttached();
 
 	const datastruct4& getData() const;
+	void printData4();
 
-	//void addData4(const std::string& channelName, const std::string& pointName, const std::variant<int, double>& value);
-
-	//void printData4();
+	void loadData4();
 
 	friend class DataManipulation;
 };

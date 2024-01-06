@@ -7,7 +7,7 @@
 
 using namespace std;
 
-Controller::Controller(ControlData& cD) : PlantEmulator(cD), cData(cD) { 
+Controller::Controller(ControlData& cD, const char* fpath) : PlantEmulator(cD, fpath), cData(cD) {
     if (cData.pBuf == nullptr) {
         cout << "Allocating controller buffer";
         cData.pBuf = new std::vector<unsigned char>;
@@ -281,6 +281,8 @@ void Controller::Print()
     else
     {
         LOG("Print from struct or file");
+        this->printData4();
+        return;
         DataManipulation::PrintData4(this->getData());
     }
 }
