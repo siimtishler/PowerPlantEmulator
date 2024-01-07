@@ -32,10 +32,10 @@ public:
 
 	bool isDLLAttached();
 
-	const datastruct4& getData() const;
-	void printData4();
+	datastruct4& getData() ;
+	datastruct4* getpData() ;
 
-	void loadData4();
+	const char* getFilepath() { return this->filepath; };
 
 	friend class DataManipulation;
 };

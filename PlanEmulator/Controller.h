@@ -25,11 +25,11 @@ private:
 	void Stop();
 	void Break();
 	void Resume();
-	void Print();
-	void PrintCh();
-	void PrintChP();
-	void Limits();
+	void Print(const std::string&, const std::string&);
+	void Limits(const std::string&, const std::string&);
 	void Exit();
+
+	void getCmdChAndPoint(std::string&, std::string&, std::string&, std::string&);
 
 public:
 	Controller(ControlData&, const char*);

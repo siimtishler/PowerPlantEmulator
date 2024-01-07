@@ -6,12 +6,41 @@
 #include <iomanip>
 #include <fstream>
 #include "common.h"
+#include <limits>
 
 #pragma warning(disable: 4996)
 
 using namespace std;
 
-void DataManipulation::AddData4(const string& channelName, const string& pointName, 
+void DataManipulation::getUnitAndPrecision(std::string point, std::string* unit, int* precision)
+{
+    if (point.find("pH") != string::npos) {
+        *precision = 1;
+        *unit = "";
+    }
+    if (point.find("flow") != string::npos) {
+        *precision = 3;
+        *unit = "m³/s";
+    }
+    if (point.find("Level") != string::npos) {
+        *precision = 0;
+        *unit = "%";
+    }
+    if (point.find("temperature") != string::npos) {
+        *precision = 1;
+        *unit = "°C";
+    }
+    if (point.find("concentration") != string::npos) {
+        *precision = 0;
+        *unit = "%";
+    }
+    if (point.find("conductivity") != string::npos) {
+        *precision = 2;
+        *unit = "s/M";
+    }
+}
+
+void DataManipulation::AddData4(const string& channelName, const string& pointName,
                                 const variant<int, double>& value, datastruct4 * pData4, chrono::system_clock::time_point timepoint)
 {
     auto channelIt = pData4->find(channelName);
@@ -42,21 +71,157 @@ void DataManipulation::AddData4(const string& channelName, const string& pointNa
     //dataList.push_back({ value, timepoint });
 }
 
-void DataManipulation::PrintData4(const datastruct4& Data4)
+void DataManipulation::PrintMinValue(const datastruct4& Data4, const string& ch, const string& p)
 {
+    int minValueInt = INT_MAX;
+    double minValueDouble = DBL_MAX;
+
+    bool intUsed = true;
+    bool gotVal = false;
+
+    string channelName;
+    struct tm now_tm;
+    string unit;
+    int precision = 0;
 
     for (const auto& channelEntry : Data4) {
-        cout << "Ch:" << channelEntry.first << endl;
+        if (channelEntry.first != ch && !ch.empty()) continue;
 
         for (const auto& pointEntry : *channelEntry.second) {
+            if (pointEntry.first != p && !p.empty()) continue;
+
+
+            DataManipulation::getUnitAndPrecision(pointEntry.first, &unit, &precision);
 
             for (const auto& dataEntry : *pointEntry.second) {
                 // Print the value based on its type
                 if (dataEntry.first.index() == 0) {
-                    cout << pointEntry.first << " = " << get<int>(dataEntry.first) << "\t";
+                    int measurment = get<int>(dataEntry.first);
+                    gotVal = true;
+                    if (measurment < minValueInt) {
+                        minValueInt = measurment;
+                        intUsed = true;
+                    }
                 }
                 else if (dataEntry.first.index() == 1) {
-                    cout << pointEntry.first << " = " << get<double>(dataEntry.first) << "\t";
+                    double measurment = get<double>(dataEntry.first);
+                    gotVal = true;
+                    if (measurment < minValueDouble) {
+                        minValueDouble = measurment;
+                        intUsed = false;
+                    }
+                }
+                time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+                localtime_s(&now_tm, &now_t);
+            }
+        }
+        cout << endl;
+    }
+
+    if (!gotVal) {
+        LOG("Wrong channel or point name");
+        return;
+    }
+    
+    if (intUsed) {
+        cout << "Min value : " << setprecision(precision) << minValueInt << " " << unit << "\t" << put_time(&now_tm, "%d-%m-%Y %H:%M:%S ");
+    }
+    else {
+        cout << "Min value : " << fixed << setprecision(precision) << minValueDouble << " " << unit << "\t" << put_time(&now_tm, "%d-%m-%Y %H:%M:%S ");
+    }
+}
+
+void DataManipulation::PrintMaxValue(const datastruct4& Data4, const string& ch, const string& p)
+{
+    int maxValueInt = 0;
+    double maxValueDouble = 0;
+
+    bool intUsed = true;
+    bool gotVal = false;
+
+    bool flagfirst = true;
+    struct tm now_tm;
+    string unit;
+    int precision = 0;
+
+    for (const auto& channelEntry : Data4) {
+        if (channelEntry.first != ch && !ch.empty()) continue;
+
+        for (const auto& pointEntry : *channelEntry.second) {
+            if (pointEntry.first != p && !p.empty()) continue;
+
+            DataManipulation::getUnitAndPrecision(pointEntry.first, &unit, &precision);
+
+            for (const auto& dataEntry : *pointEntry.second) {
+                // Print the value based on its type
+                if (dataEntry.first.index() == 0) {
+                    int measurment = get<int>(dataEntry.first);
+                    gotVal = true;
+                    if (flagfirst) {
+                        maxValueInt = measurment;
+                        flagfirst = false;
+                    }
+
+                    if (measurment > maxValueInt) {
+                        maxValueInt = measurment;
+                        intUsed = true;
+                    }
+                }
+                else if (dataEntry.first.index() == 1) {
+                    double measurment = get<double>(dataEntry.first);
+                    gotVal = true;
+                    if (flagfirst) {
+                        maxValueDouble = measurment;
+                        flagfirst = false;
+                    }
+
+                    if (measurment > maxValueDouble) {
+                        maxValueDouble = measurment;
+                        intUsed = false;
+                    }
+                    time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+                    localtime_s(&now_tm, &now_t);
+                }
+            }
+        }
+        cout << endl;
+    }
+
+    if (!gotVal) {
+        LOG("Wrong channel or point name");
+        return;
+    }
+
+    if (intUsed) {
+        cout << "Max value : " << setprecision(precision) << maxValueInt << " " << unit <<  "\t" << put_time(&now_tm, "%d-%m-%Y %H:%M:%S ");
+    }
+    else {
+        cout << "Max value : " << fixed << setprecision(precision) << maxValueDouble << " " << unit << "\t"<< put_time(&now_tm, "%d-%m-%Y %H:%M:%S ");
+    }
+}
+
+
+void DataManipulation::PrintData4ChP(const datastruct4& Data4, const string& ch, const string& p)
+{
+    for (const auto& channelEntry : Data4) {
+        if (channelEntry.first != ch && !ch.empty()) continue;
+        cout << "Ch:" << channelEntry.first << endl;
+
+        for (const auto& pointEntry : *channelEntry.second) {
+            if (pointEntry.first != p && !p.empty()) continue;
+
+            string unit;
+            int precision = 0;
+
+            DataManipulation::getUnitAndPrecision(pointEntry.first, &unit, &precision);
+
+            for (const auto& dataEntry : *pointEntry.second) {
+                // Print the value based on its type
+                if (dataEntry.first.index() == 0) {
+                    cout << setprecision(precision) << pointEntry.first << " = " << get<int>(dataEntry.first) << " " << unit <<"\t";
+                }
+                else if (dataEntry.first.index() == 1) {
+                    cout << fixed << setprecision(precision) << pointEntry.first << " = " << get<double>(dataEntry.first) << " " << unit << "\t";
                 }
                 else {
                     cout << endl;
@@ -71,7 +236,6 @@ void DataManipulation::PrintData4(const datastruct4& Data4)
         }
         cout << endl;
     }
-    
 }
 
 void DataManipulation::ParseData4(vector<unsigned char>* pBuf, datastruct4* pData4, chrono::system_clock::time_point timestamp, boolean flag_print)
@@ -132,15 +296,16 @@ void DataManipulation::ParseData4(vector<unsigned char>* pBuf, datastruct4* pDat
                 measuredValue = *reinterpret_cast<double*>(&receivedData[currentIndex]);
                 currentIndex += sizeof(double);
             }
+            string unit;
+            int precision;
 
-            if (currentIndex == packageLength - 8) {
-                currentIndex += 8;
-                continue;
-            }
+            DataManipulation::getUnitAndPrecision(pointName, &unit, &precision);
 
             DataManipulation::AddData4(channelName, pointName, measuredValue, pData4, timestamp);
 
-            sout << pointName << " = " << measuredValue << endl;
+            //sout << pointName << " = " << measuredValue << endl;
+
+            sout << fixed << setprecision(precision) << pointName << " = " << measuredValue << " " << unit << endl;
         }
     }
     sout << "Package len: " << packageLength << " Index: " << currentIndex << endl << endl;
@@ -149,7 +314,7 @@ void DataManipulation::ParseData4(vector<unsigned char>* pBuf, datastruct4* pDat
 
 void DataManipulation::WriteData4ToFile(HANDLE& hFile, vector<unsigned char>* pBuf)
 {
-    static int totalMem = 0;
+    static int totalMem = 0, count = 0;
 
     stringstream sout;
 
@@ -169,6 +334,7 @@ void DataManipulation::WriteData4ToFile(HANDLE& hFile, vector<unsigned char>* pB
     packageLength = *reinterpret_cast<int*>(&pBuf->at(0));
     sout << "pac len: " << packageLength << endl;
 
+
     if (!WriteFile(hFile, pBuf->data(), (DWORD)pBuf->size(), &nWritten, NULL)) {
         cerr << "Error writing to file " << GetLastError() << endl;
         return;
@@ -179,6 +345,8 @@ void DataManipulation::WriteData4ToFile(HANDLE& hFile, vector<unsigned char>* pB
         cerr << "Error writing to file " << GetLastError() << endl;
         return;
     }
+
+    sout << "package write: " << count++ << endl;
 
     sout << "WRITING: " << endl;
     for_each(pBuf->begin(), pBuf->end(), [&](int i) {sout << hex << i << " "; });
@@ -200,7 +368,10 @@ void DataManipulation::ReadData4FromFile(const char *filepath, datastruct4 *pDat
         cout << "File didn't open" << endl;
         return;
     }
+    file.seekg(0, ios::beg);
 
+    static int count = 0;
+    count = 0;
     while (!file.eof()) {
         // Get the current position of the file cursor
         streampos currentPosition = file.tellg();
@@ -220,14 +391,14 @@ void DataManipulation::ReadData4FromFile(const char *filepath, datastruct4 *pDat
         // Move the cursor back to the start of the chunk
         file.seekg(currentPosition, ios::beg);
 
+        // Read the entire chunk
+        vector<unsigned char> buffer(chunkSize);
+        file.read(reinterpret_cast<char*>(buffer.data()), chunkSize);
+
         // Get the new position of the file cursor
         currentPosition = file.tellg();
         if (currentPosition == -1) break;
         sout << "New position: " << currentPosition << endl;
-
-        // Read the entire chunk
-        vector<unsigned char> buffer(chunkSize);
-        file.read(reinterpret_cast<char*>(buffer.data()), chunkSize);
 
         sout << "Read " << chunkSize << " bytes: ";
         for (char byte : buffer) {
@@ -244,10 +415,12 @@ void DataManipulation::ReadData4FromFile(const char *filepath, datastruct4 *pDat
         sout << "Timestamp read from file: ";
         sout << put_time(&timestamp_tm, "%Y-%m-%d %H:%M:%S") << endl;
 
+        sout << "package read: " << count++ << endl;
+
         //cout << sout.str();
         DataManipulation::ParseData4(&buffer, pData4, timestamp, false);
     }
-
+    file.seekg(0, ios::beg);
     file.close();
     return;
 }

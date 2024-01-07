@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <conio.h>
 #include <thread>
+#include <sstream>
 
 using namespace std;
 
@@ -26,17 +27,50 @@ Controller::~Controller() {
 }
 
 
+void Controller::getCmdChAndPoint(string& input, string& cmd, string& ch, string& p)
+{
+    int pos = input.find(" ");
+    string rest;
+    vector<int> capitals;
+
+    cmd = input.substr(0, pos);
+    for (auto& s : cmd) { s = tolower(s); }
+    if (pos != -1) {
+        rest = input.substr(pos + 1, input.length());
+    }
+    if (!isupper(rest[0]) && rest.length() > 0) {
+        cmd = "unknown";
+        return;
+    }
+    for (int i = 0; i < rest.length(); i++) {
+        if (isupper(rest[i])) {
+            capitals.push_back(i);
+        }
+    }
+
+    if (capitals.size() == 1) {
+        ch = rest.substr(capitals[0], rest.length());
+    }
+    if (capitals.size() == 2) {
+        ch = rest.substr(capitals[0], capitals[1] - 1);
+        p = rest.substr(capitals[1], rest.length());
+    }
+    if (capitals.size() > 2) {
+        ch = rest.substr(capitals[0], capitals[1] - 1);
+        p = rest.substr(capitals[1], capitals[2] - 1);
+    }
+}
+
 void Controller::controllerThreadFun()
 {
 	while (true) {
-		char buf[100];
-		cin >> buf;
-		cout << endl;
+        string input;
+        getline(cin, input);
 
-        std::transform(buf, buf + strlen(buf), buf, ::tolower);
+        string ch, p, cmd;
+        getCmdChAndPoint(input, cmd, ch, p);
 
-        // Switch based on the command
-        switch (hash(buf)) {
+        switch (hash(cmd.c_str())) {
             //1.	“connect”: the logger attaches the DLL and calls method
             //		SetIAS0410PlantEmulator().
             case hash("connect"):
@@ -78,42 +112,22 @@ void Controller::controllerThreadFun()
                 //7.	“print” : the logger shows the contents of the data structure in the Windows command
                 //		prompt window. If the DLL is attached, this command should be ignored.
             case hash("print"):
-                Print();
-                break;
-
-                //8.	“print channel_name” : the logger retrieves from the data structure all the data served
-                //		by the specified channel and shows it in the Windows command prompt window. If
-                //		the DLL is attached, this command should be ignored. Example : “print Ch2”.
-            case hash("print ch"):
-                PrintCh();
-                break;
-
-                //9.	“print channel_name point_name” : the logger retrieves from the data structure all the
-                //		data served by the specified channel and specified measurement point and shows it
-                //		in the Windows command prompt window. If the DLL is attached, this command
-                //		should be ignored. Example : “print Ch2 P4”.
-            case hash("print ch p"):
-                PrintChP();
+                Print(ch, p);
                 break;
 
                 //10.	“limits channel_name point_name” : the logger finds from the data structure the
             case hash("limits"):
-
-                // Should check if we have anything in the data structure first
-                // Or maybe this checks the file and if the file has any contents
-                Limits();
+                Limits(ch, p);
                 break;
 
                 // 11.	“exit”: must be applicable at any moment. If necessary terminates the threads,
                 //		closes the log file, detaches the DLL, clears everything and quits.
             case hash("exit"):
                 Exit();
-                //this->consumerT.join();
                 return;
 
-            case hash("state"):
-                cout << "Current state: " << cData.state << endl;
-                //this->consumerT.join();
+            default:
+                cout << "Unknown command" << endl;
                 break;
         }
 	}
@@ -226,18 +240,22 @@ void Controller::Stop()
         return;
     }
 
+    if (producerBreaked()) {
+        this->cData.state = 'r';
+    }
+
     this->cData.state = 's';
     cData.cv.notify_all();
     this->fut = this->cData.pProm->get_future();
     this->fut.wait();
 
-    this_thread::sleep_for(chrono::milliseconds(300));
+    //this_thread::sleep_for(chrono::milliseconds(300));
 
     if (this->consumerT.joinable()) {
         this->consumerT.join();
     }
 
-    this_thread::sleep_for(chrono::milliseconds(300));
+    //this_thread::sleep_for(chrono::milliseconds(300));
 
     if (!this->cData.pBuf->empty()) {
         this->cData.pBuf->clear();
@@ -272,7 +290,7 @@ void Controller::Resume()
     }
 }
 
-void Controller::Print()
+void Controller::Print(const string& ch, const string& p)
 {
     if (isDLLAttached()) {
         LOG("Can't print, DLL attached");
@@ -280,41 +298,22 @@ void Controller::Print()
     }
     else
     {
-        LOG("Print from struct or file");
-        this->printData4();
+        DataManipulation::PrintData4ChP(this->getData(),ch,p);
         return;
-        DataManipulation::PrintData4(this->getData());
     }
 }
 
-void Controller::PrintCh()
+void Controller::Limits(const string& ch, const string& p)
 {
     if (isDLLAttached()) {
         LOG("Can't print, DLL attached");
         return;
     }
-    else
-    {
-        LOG("Print from data struct. Example: “print Ch2”");
+    if (!ch.empty() && !p.empty()) {
+        DataManipulation::PrintMaxValue(this->getData(), ch, p);
+        DataManipulation::PrintMinValue(this->getData(), ch, p);
+        cout << endl;
     }
-
-}
-
-void Controller::PrintChP()
-{
-    if (isDLLAttached()) {
-        LOG("Can't print, DLL attached");
-        return;
-    }
-    else
-    {
-        LOG("Print from data struct. Example: “print Ch2 P4”");
-    }
-}
-
-void Controller::Limits()
-{
-    LOG("Print limits");
 }
 
 void Controller::Exit()
@@ -324,3 +323,7 @@ void Controller::Exit()
     LOG("Exiting logger");
     return;
 }
+
+
+
+
