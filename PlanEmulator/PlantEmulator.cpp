@@ -15,9 +15,7 @@ PlantEmulator::PlantEmulator(ControlData& cD, const char* fpath) : cDataCat(cD) 
         cDataCat.pBuf = new vector<unsigned char>;
     }
     this->filepath = fpath;
-    LOG(this->filepath);
     DataManipulation::ReadData4FromFile(this->filepath, &this->Data4);
-    //this->loadData4();
 }
 
 PlantEmulator::~PlantEmulator() {
@@ -156,7 +154,7 @@ void PlantEmulator::ConsumerThreadFun(ControlData *cData)
         cData->cv.wait(lock, [&]() { return !cData->pBuf->empty(); });
 
         // Check if there is data in pBuf
-        if (!cData->pBuf->empty()) {
+        if (!cData->pBuf->empty() && cData->state == 'r') {
 
             DataManipulation::ParseData4(cData->pBuf, &this->Data4, chrono::system_clock::now(), true);
             DataManipulation::WriteData4ToFile(hFile, cData->pBuf);
@@ -167,7 +165,7 @@ void PlantEmulator::ConsumerThreadFun(ControlData *cData)
         cData->cv.notify_one();
     }
     CloseHandle(hFile);
-    LOG("Exiting consumer")
+    LOG("\nExiting consumer")
 }
 
 

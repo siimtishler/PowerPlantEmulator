@@ -63,6 +63,7 @@ void Controller::getCmdChAndPoint(string& input, string& cmd, string& ch, string
 
 void Controller::controllerThreadFun()
 {
+    cout << "=====IAS0410 PLANT LOGGER=====" << endl;
 	while (true) {
         string input;
         getline(cin, input);

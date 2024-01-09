@@ -99,6 +99,8 @@ void DataManipulation::PrintMinValue(const datastruct4& Data4, const string& ch,
                     int measurment = get<int>(dataEntry.first);
                     gotVal = true;
                     if (measurment < minValueInt) {
+                        time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+                        localtime_s(&now_tm, &now_t);
                         minValueInt = measurment;
                         intUsed = true;
                     }
@@ -107,12 +109,12 @@ void DataManipulation::PrintMinValue(const datastruct4& Data4, const string& ch,
                     double measurment = get<double>(dataEntry.first);
                     gotVal = true;
                     if (measurment < minValueDouble) {
+                        time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+                        localtime_s(&now_tm, &now_t);
                         minValueDouble = measurment;
                         intUsed = false;
                     }
                 }
-                time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
-                localtime_s(&now_tm, &now_t);
             }
         }
         cout << endl;
@@ -171,16 +173,19 @@ void DataManipulation::PrintMaxValue(const datastruct4& Data4, const string& ch,
                     double measurment = get<double>(dataEntry.first);
                     gotVal = true;
                     if (flagfirst) {
+                        time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+                        localtime_s(&now_tm, &now_t);
                         maxValueDouble = measurment;
                         flagfirst = false;
                     }
 
                     if (measurment > maxValueDouble) {
+                        time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
+                        localtime_s(&now_tm, &now_t);
                         maxValueDouble = measurment;
                         intUsed = false;
                     }
-                    time_t now_t = chrono::system_clock::to_time_t(dataEntry.second);
-                    localtime_s(&now_tm, &now_t);
+                    
                 }
             }
         }
@@ -199,7 +204,6 @@ void DataManipulation::PrintMaxValue(const datastruct4& Data4, const string& ch,
         cout << "Max value : " << fixed << setprecision(precision) << maxValueDouble << " " << unit << "\t"<< put_time(&now_tm, "%d-%m-%Y %H:%M:%S ");
     }
 }
-
 
 void DataManipulation::PrintData4ChP(const datastruct4& Data4, const string& ch, const string& p)
 {
@@ -384,18 +388,17 @@ void DataManipulation::ReadData4FromFile(const char *filepath, datastruct4 *pDat
         sout << "Read value: " << chunkSize << endl;
 
         if (chunkSize <= 0) {
-            // End of file or invalid chunk size, break out of the loop
             break;
         }
         chunkSize += 1;
-        // Move the cursor back to the start of the chunk
+        // Move cursor to start of chunk
         file.seekg(currentPosition, ios::beg);
 
-        // Read the entire chunk
+        // Read entire chunk
         vector<unsigned char> buffer(chunkSize);
         file.read(reinterpret_cast<char*>(buffer.data()), chunkSize);
 
-        // Get the new position of the file cursor
+        // Get new position of file cursor
         currentPosition = file.tellg();
         if (currentPosition == -1) break;
         sout << "New position: " << currentPosition << endl;
