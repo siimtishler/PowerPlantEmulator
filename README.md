@@ -29,11 +29,12 @@ struct ControlData
 };
 ```
 #### Data structure where the measurments are saved into
+
+It is a C++ map in which the channel names are the keys.<br>The values are
+pointers to inner C++ maps in which the keys are point names and the
+values are pointers to lists.<br>The members of lists are pairs in which
+member "first" is the measument value and member "second" is the
+timestamp.
 ```
 map<string, map<string, list<pair<variant<int, double>, system_clock::time_point> > * > * > Data4;
-/* It is a C++ map in which the channel names are the keys.The values are
-pointers to inner C++ maps in which the keys are point names and the
-values are pointers to lists.The members of lists are pairs in which
-member "first" is the measument value and member "second" is the
-timestamp.*/
 ```
