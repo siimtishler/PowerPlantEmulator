@@ -36,5 +36,6 @@ values are pointers to lists.<br>The members of lists are pairs in which
 member "first" is the measument value and member "second" is the
 timestamp.
 ```
-map<string, map<string, list<pair<variant<int, double>, system_clock::time_point> > * > * > Data4;
+map<string, map<string, list<pair<variant<int, double>,
+system_clock::time_point> > * > * > Data4;
 ```
